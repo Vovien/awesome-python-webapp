@@ -12,7 +12,7 @@ def log(sql, args=()):
     logging.info('SQL: %s' % sql)
 
 
-async def creat_pool(loop, **kw):
+async def create_pool(loop, **kw):
     logging.info('create database connection pool...')
     global __pool
     __pool = await aiomysql.create_pool(
@@ -45,7 +45,7 @@ async def select(sql, args, size=None):
 
 async def execute(sql, args, autocommit=True):
     log(sql)
-    async with __pool as conn:
+    async with __pool.get() as conn:
         if not autocommit:
             await conn.begin()
         try:
@@ -54,7 +54,6 @@ async def execute(sql, args, autocommit=True):
                 affected = cur.rowcount
             if not autocommit:
                 await conn.commit()
-            await cur.close()
         except BaseException as e:
             if not autocommit:
                 await conn.rollback()
@@ -153,7 +152,7 @@ class ModelMetaclass(type):
 
 class Model(dict, metaclass=ModelMetaclass):
     def __init__(self, **kw):
-        super(dict, self).__init__(**kw)
+        super(Model, self).__init__(**kw)
 
     def __getattr__(self, item):
         try:
@@ -170,7 +169,7 @@ class Model(dict, metaclass=ModelMetaclass):
     def getValueOrDefault(self, key):
         value = getattr(self, key, None)
         if value is None:
-            field = self.__mappings_[key]
+            field = self.__mappings__[key]
             if field.default is not None:
                 value = field.default() if callable(field.default) else field.default
                 logging.debug('using default value for %s:%s' % (key, str(value)))
