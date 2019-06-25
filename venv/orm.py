@@ -65,7 +65,7 @@ def creat_args_string(num):
     L = []
     for n in range(num):
         L.append('?')
-    return ','.join(L)
+    return ', '.join(L)
 
 
 class Field(object):
@@ -76,7 +76,7 @@ class Field(object):
         self.default = default
 
     def __str__(self):
-        return '<%s,%s:%s>' % (self.__class__.__name__, self.column_type, self.name)
+        return '<%s, %s:%s>' % (self.__class__.__name__, self.column_type, self.name)
 
 
 class StringField(Field):
@@ -114,7 +114,7 @@ class ModelMetaclass(type):
         if name == 'Model':
             return type.__new__(cls, name, base, attrs)
         # 获取table名称:
-        tableName = attrs.get('table', None) or name
+        tableName = attrs.get('__table__', None) or name
         logging.info('found model: %s(table:%s)' % (name, tableName))
         # 获取所有的Field和主键名:
         mappings = dict()
@@ -181,13 +181,13 @@ class Model(dict, metaclass=ModelMetaclass):
         """find object by where clause"""
         sql = [cls.__select__]
         if where:
-            sql.append('where')
+            sql.append('where ')
             sql.append(where)
         if args is None:
             args = []
         orderBy = kw.get('orderBy', None)
         if orderBy:
-            sql.append('order by')
+            sql.append('order by ')
             sql.append(orderBy)
         limit = kw.get('limit', None)
         if limit is not None:
@@ -196,11 +196,11 @@ class Model(dict, metaclass=ModelMetaclass):
                 sql.append('?')
                 args.append(limit)
             elif isinstance(limit, tuple) and len(limit) == 2:
-                sql.append('?,?')
+                sql.append('?, ?')
                 args.extend(limit)
             else:
                 raise ValueError('Invalid limit value: %s' % str(limit))
-        rs = await select(''.join(sql), args)
+        rs = await select(' '.join(sql), args)
         return [cls(**r) for r in rs]
 
     @classmethod
